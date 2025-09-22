@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>JSON Fetch Test</title>
+</head>
+<body>
+  <h1>観戦履歴 JSON テスト</h1>
+  <pre id="output">Loading...</pre>
+
+  <script>
+    async function loadData() {
+      try {
+        const res = await fetch("https://xxxxxxxxxx.execute-api.ap-northeast-1.amazonaws.com/prod/notion-data");
+        const data = await res.json();
+        document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        document.getElementById("output").textContent = "Error: " + err;
+      }
+    }
+    loadData();
+  </script>
+</body>
+</html>
