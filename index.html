@@ -35,99 +35,105 @@
     <tbody></tbody>
   </table>
 
-  <script>
-    const API_URL = "https://67vicdn06m.execute-api.ap-northeast-1.amazonaws.com/soccer_history";
-    let allData = [];
-    let sortState = { key: null, asc: true }; // ソート状態
+<script>
+const API_URL = "https://67vicdn06m.execute-api.ap-northeast-1.amazonaws.com/soccer_history";
+let allData = [];
+let filteredData = []; // フィルター済みデータ
+let sortState = { key: null, asc: true };
 
-    async function loadData() {
-      try {
-        const res = await fetch(API_URL);
-        allData = await res.json();
+async function loadData() {
+  try {
+    const res = await fetch(API_URL);
+    allData = await res.json();
+    filteredData = [...allData];
 
-        populateFilter();
-        renderTable(allData);
-        enableSorting();
-      } catch (err) {
-        console.error("データ取得失敗:", err);
-        document.querySelector("#games tbody").innerHTML =
-          `<tr><td colspan="6">データ取得失敗: ${err}</td></tr>`;
+    populateFilter();
+    renderTable(filteredData);
+    enableSorting();
+  } catch (err) {
+    console.error("データ取得失敗:", err);
+    document.querySelector("#games tbody").innerHTML =
+      `<tr><td colspan="6">データ取得失敗: ${err}</td></tr>`;
+  }
+}
+
+function populateFilter() {
+  const select = document.getElementById("nameFilter");
+  const names = Array.from(new Set(allData.map(d => d.name))).sort();
+  names.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    select.appendChild(option);
+  });
+
+  select.addEventListener("change", () => {
+    filteredData = select.value
+      ? allData.filter(d => d.name === select.value)
+      : [...allData];
+
+    if (sortState.key) {
+      sortData(sortState.key);
+    } else {
+      renderTable(filteredData);
+    }
+  });
+}
+
+function renderTable(data) {
+  const tbody = document.querySelector("#games tbody");
+  tbody.innerHTML = "";
+  data.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.name}</td>
+      <td>${row.against}</td>
+      <td>${row.勝}</td>
+      <td>${row.分}</td>
+      <td>${row.負}</td>
+      <td>${row.観戦数}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function enableSorting() {
+  const headers = document.querySelectorAll("#games th");
+  headers.forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.key;
+      if (sortState.key === key) {
+        sortState.asc = !sortState.asc;
+      } else {
+        sortState.key = key;
+        sortState.asc = true;
       }
+
+      headers.forEach(h => h.classList.remove("sort-asc", "sort-desc"));
+      th.classList.add(sortState.asc ? "sort-asc" : "sort-desc");
+
+      sortData(key);
+    });
+  });
+}
+
+function sortData(key) {
+  filteredData.sort((a, b) => {
+    const valA = a[key];
+    const valB = b[key];
+    if (typeof valA === "number" && typeof valB === "number") {
+      return sortState.asc ? valA - valB : valB - valA;
+    } else {
+      return sortState.asc
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
     }
+  });
+  renderTable(filteredData);
+}
 
-    function populateFilter() {
-      const select = document.getElementById("nameFilter");
-      const nameCounts = allData.reduce((acc, d) => {
-        acc[d.name] = (acc[d.name] || 0) + d.観戦数;
-        return acc;
-      }, {});
+loadData();
+</script>
 
-      const names = Object.keys(nameCounts).sort((a, b) => nameCounts[b] - nameCounts[a]);
-      names.forEach(name => {
-        const option = document.createElement("option");
-        option.value = name;
-        option.textContent = name;
-        select.appendChild(option);
-      });
-
-      select.addEventListener("change", () => {
-        const filtered = select.value ? allData.filter(d => d.name === select.value) : allData;
-        renderTable(filtered);
-      });
-    }
-
-    function renderTable(data) {
-      const tbody = document.querySelector("#games tbody");
-      tbody.innerHTML = "";
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.name}</td>
-          <td>${row.against}</td>
-          <td>${row.勝}</td>
-          <td>${row.分}</td>
-          <td>${row.負}</td>
-          <td>${row.観戦数}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function enableSorting() {
-      const headers = document.querySelectorAll("#games th");
-      headers.forEach(th => {
-        th.addEventListener("click", () => {
-          const key = th.dataset.key;
-          if (sortState.key === key) {
-            sortState.asc = !sortState.asc;
-          } else {
-            sortState.key = key;
-            sortState.asc = true;
-          }
-
-          headers.forEach(h => {
-            h.classList.remove("sort-asc", "sort-desc");
-          });
-          th.classList.add(sortState.asc ? "sort-asc" : "sort-desc");
-
-          const sorted = [...allData].sort((a, b) => {
-            const valA = a[sortState.key];
-            const valB = b[sortState.key];
-
-            if (typeof valA === "number" && typeof valB === "number") {
-              return sortState.asc ? valA - valB : valB - valA;
-            } else {
-              return sortState.asc
-                ? String(valA).localeCompare(String(valB))
-                : String(valB).localeCompare(String(valA));
-            }
-          });
-          renderTable(sorted);
-        });
-      });
-    }
-
-    loadData();
-  </script>
 </body>
 </html>
