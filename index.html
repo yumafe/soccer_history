@@ -55,7 +55,12 @@
 
     function populateFilter() {
       const select = document.getElementById("nameFilter");
-      const names = Array.from(new Set(allData.map(d => d.name))).sort();
+      const nameCounts = allData.reduce((acc, d) => {
+        acc[d.name] = (acc[d.name] || 0) + d.観戦数;
+        return acc;
+      }, {});
+
+      const names = Object.keys(nameCounts).sort((a, b) => nameCounts[b] - nameCounts[a]);
       names.forEach(name => {
         const option = document.createElement("option");
         option.value = name;
