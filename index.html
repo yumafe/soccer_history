@@ -38,7 +38,7 @@
   <script>
     const API_URL = "https://67vicdn06m.execute-api.ap-northeast-1.amazonaws.com/soccer_history";
     let allData = [];
-    let sortState = {}; // 列ごとの昇順・降順状態
+    let sortState = { key: null, asc: true }; // ソート状態
 
     async function loadData() {
       try {
@@ -98,14 +98,28 @@
       headers.forEach(th => {
         th.addEventListener("click", () => {
           const key = th.dataset.key;
-          sortState[key] = !sortState[key]; // trueなら昇順、falseなら降順
+          if (sortState.key === key) {
+            sortState.asc = !sortState.asc;
+          } else {
+            sortState.key = key;
+            sortState.asc = true;
+          }
+
+          headers.forEach(h => {
+            h.classList.remove("sort-asc", "sort-desc");
+          });
+          th.classList.add(sortState.asc ? "sort-asc" : "sort-desc");
+
           const sorted = [...allData].sort((a, b) => {
-            if (typeof a[key] === "number") {
-              return sortState[key] ? a[key] - b[key] : b[key] - a[key];
+            const valA = a[sortState.key];
+            const valB = b[sortState.key];
+
+            if (typeof valA === "number" && typeof valB === "number") {
+              return sortState.asc ? valA - valB : valB - valA;
             } else {
-              return sortState[key]
-                ? String(a[key]).localeCompare(String(b[key]))
-                : String(b[key]).localeCompare(String(a[key]));
+              return sortState.asc
+                ? String(valA).localeCompare(String(valB))
+                : String(valB).localeCompare(String(valA));
             }
           });
           renderTable(sorted);
